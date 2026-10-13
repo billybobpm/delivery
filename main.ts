@@ -193,7 +193,6 @@ scene.cameraFollowSprite(car)
 let timeLeft = 120
 info.startCountdown(timeLeft)
 info.onCountdownEnd(function () {
-    // Penalize 5 points then end the game as a loss
     if (gameEnded) return
     gameEnded = true
     info.changeScoreBy(-5)
@@ -203,35 +202,59 @@ info.onCountdownEnd(function () {
 
 // Determine a representative color for the grass tile by sampling the tile image
 let grassColor = sprites.castle.tileGrass1.getPixel(7, 7)
+let grassAccumMs = 0
+let detectIntervalMs = 200
 
-// Update every second: handle grass penalty and a 10s warning
-game.onUpdateInterval(1000, function () {
-    if (gameEnded) return
+// Update every 200ms: handle faster grass detection and a 10s warning
+// This keeps the penalty at about 1 point/second while making detection feel responsive.
+game.onUpdateInterval(detectIntervalMs, function () {
+    if (gameEnded || car == null) return
+
     // keep our local timer in sync for warnings
     timeLeft = Math.max(0, timeLeft - 1)
 
     // 10-second warning
     if (timeLeft == 10) {
-        // play a warning tone and shake the camera briefly
         music.playTone(262, music.beat(BeatFraction.Whole))
         scene.cameraShake(2, 300)
     }
 
-    // Penalize 1 point per second when on grass (detect by background pixel color)
-    if (car != null) {
-        const bg = scene.backgroundImage()
-        const worldX = Math.floor(car.x)
-        const worldY = Math.floor(car.y)
-        const colorUnder = bg.getPixel(worldX, worldY)
-        if (colorUnder == grassColor) {
+    // sample the area around the car to see if it is on grass
+    let tileX = Math.floor(car.x / 16)
+    let tileY = Math.floor(car.y / 16)
+    let centerX = tileX * 16 + 8
+    let centerY = tileY * 16 + 8
+    let bg = scene.backgroundImage()
+    let onGrass = false
+
+    // 3x3 sample around the center of the tile to catch overlap/edge cases
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            let px = centerX + dx
+            let py = centerY + dy
+            if (px >= 0 && py >= 0 && px < bg.width && py < bg.height) {
+                if (bg.getPixel(px, py) == grassColor) {
+                    onGrass = true
+                    break
+                }
+            }
+        }
+        if (onGrass) break
+    }
+
+    if (onGrass) {
+        grassAccumMs += detectIntervalMs
+        if (grassAccumMs >= 1000) {
+            grassAccumMs = 0
             info.changeScoreBy(-1)
-            // end the game if score drops to -5 or lower
             if (info.score() <= -5 && !gameEnded) {
                 gameEnded = true
                 game.setGameOverEffect(true, effects.confetti)
                 game.gameOver(false)
             }
         }
+    } else {
+        grassAccumMs = 0
     }
 })
 
