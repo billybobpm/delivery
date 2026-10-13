@@ -189,8 +189,9 @@ tiles.placeOnRandomTile(car, myTiles.tile4)
 controller.moveSprite(car)
 scene.cameraFollowSprite(car)
 
-// Two-minute timer
-info.startCountdown(120)
+// Two-minute timer (uses built-in countdown for display)
+let timeLeft = 120
+info.startCountdown(timeLeft)
 info.onCountdownEnd(function () {
     // Penalize 5 points then end the game as a loss
     if (gameEnded) return
@@ -200,12 +201,43 @@ info.onCountdownEnd(function () {
     game.gameOver(false)
 })
 
-// End the game when the score hits -5
+// Update every second: handle grass penalty and a 10s warning
+game.onUpdateInterval(1000, function () {
+    if (gameEnded) return
+    // keep our local timer in sync for warnings
+    timeLeft = Math.max(0, timeLeft - 1)
+
+    // 10-second warning
+    if (timeLeft == 10) {
+        // play a warning tone and shake the camera briefly
+        music.playTone(262, music.beat(BeatFraction.Whole))
+        scene.cameraShake(2, 300)
+    }
+
+    // Penalize 1 point per second when on grass
+    if (car != null) {
+        const loc = tiles.locationOfSprite(car)
+        if (loc) {
+            const tile = tiles.tileAtLocation(loc)
+            if (tile == sprites.castle.tileGrass1) {
+                info.changeScoreBy(-1)
+                // end the game if score drops to -5 or lower
+                if (info.score() <= -5 && !gameEnded) {
+                    gameEnded = true
+                    game.setGameOverEffect(true, effects.confetti)
+                    game.gameOver(false)
+                }
+            }
+        }
+    }
+})
+
+// End the game when the score hits -5 (safety check)
 game.onUpdate(function () {
     if (gameEnded) return
     if (info.score() <= -5) {
         gameEnded = true
-        game.setGameOverEffect(false, effects.melt)
+        game.setGameOverEffect(true, effects.confetti)
         game.gameOver(false)
     }
 })
