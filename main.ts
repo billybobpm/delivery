@@ -1,3 +1,5 @@
+let car: Sprite = null
+
 namespace SpriteKind {
     export const Object = SpriteKind.create()
 }
@@ -7,8 +9,15 @@ scene.onOverlapTile(SpriteKind.Player, myTiles.tile3, function (sprite, location
     game.setGameOverEffect(true, effects.confetti)
     game.gameOver(true)
 })
+
+function setCarImage(image: Image) {
+    if (car != null) {
+        car.setImage(image)
+    }
+}
+
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    car.setImage(img`
+    setCarImage(img`
         . . . . . . . . . . . . . . . .
         . . . . . . 3 3 3 3 3 3 . . . .
         . . . . . 3 3 d d 3 3 3 3 . . .
@@ -28,6 +37,7 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
         `)
 })
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (car == null) return
     let package1 = sprites.createProjectileFromSprite(img`
         . . . . . . . . . . . . . . . .
         . . . . . . . e e e e e e e . .
@@ -49,6 +59,7 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 // Deliver packages up (A) or down (B)
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (car == null) return
     let package2 = sprites.createProjectileFromSprite(img`
         . . . . . . . . . . . . . . . .
         . . . . . . . e e e e e e e . .
@@ -69,12 +80,12 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
         `, car, 0, -50)
 })
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
-    car.setImage(img`
+    setCarImage(img`
         . . . . . . . . . . . . . . . .
         . . . . . . 3 3 3 3 3 3 3 3 . .
         . . . . . 3 c 3 3 3 3 3 3 d 3 .
         . . . . 3 c c 3 3 3 3 3 3 d c 3
-        . . d 3 d c c 3 d d d d d d c c
+        . . . d 3 d c c 3 d d d d d d c c
         . d 3 3 d c b a a a a a a a 3 c
         . 3 3 3 d b a a b b b a b b a 3
         . 3 3 3 3 3 a b b b b a b b b a
@@ -89,7 +100,7 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
         `)
 })
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    car.setImage(img`
+    setCarImage(img`
         . . . . . . . . . . . . . . . .
         . . . . 3 3 3 3 3 3 3 3 . . . .
         . . . 3 d 3 3 3 3 3 3 c 3 . . .
@@ -111,7 +122,7 @@ controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
 // Change the car image based on the direction it's
 // driving
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    car.setImage(img`
+    setCarImage(img`
         . . . . . . a a c c a a . . . .
         . . . . . a 3 3 3 3 3 3 a . . .
         . . . . 3 c 3 3 3 3 3 3 c 3 . .
@@ -132,12 +143,20 @@ controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 // Score a point for delivering packages to houses
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Object, function (sprite, otherSprite) {
+    if (sprite == null || otherSprite == null) return
+    if (otherSprite.data && otherSprite.data["scored"]) return
+
+    if (otherSprite.data) {
+        otherSprite.data["scored"] = true
+    }
+
     music.magicWand.play()
     sprite.destroy(effects.confetti, 500)
     info.changeScoreBy(1)
 })
 // Lose a point for driving into a house
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Object, function (sprite, otherSprite) {
+    if (sprite == null || otherSprite == null) return
     music.playTone(147, music.beat(BeatFraction.Quarter))
     music.playTone(139, music.beat(BeatFraction.Quarter))
     music.playTone(131, music.beat(BeatFraction.Quarter))
@@ -146,7 +165,7 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Object, function (sprite, otherS
 })
 scene.setBackgroundColor(7)
 tiles.setTilemap(tilemap`level`)
-let car = sprites.create(img`
+car = sprites.create(img`
     . . . . . . . . . . . . . . . .
     . . . . 3 3 3 3 3 3 3 3 . . . .
     . . . 3 d 3 3 3 3 3 3 c 3 . . .
@@ -247,7 +266,7 @@ for (let value of tiles.getTilesByType(myTiles.tile2)) {
         46622e22cc66666cc64444444444446cc66666cc22e22664
         6c622e22eeecc66666cc64444446cc66666cceee22e226c6
         4cceee22e22eeecc66666cccccc66666cceee22e22eeecc4
-        46622e22e22e22eeecc6666666666cceee22e22e22e22664
+        46622e22e22e22eeecc66666cceee22e22e22e22eee664
         46622eeee22e22e22eeecc6666cceee22e22e22eeee22664
         6c622e22e22e22e22e22eee22eee22e22e22e22e22e226c6
         4cc22e22eeee22e22e22e2e22e2e22e22e22eeee22e22cc4
