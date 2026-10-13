@@ -186,6 +186,16 @@ car = sprites.create(img`
 tiles.placeOnRandomTile(car, myTiles.tile4)
 controller.moveSprite(car)
 scene.cameraFollowSprite(car)
+
+// Two-minute timer
+info.startCountdown(120)
+info.onCountdownEnd(function () {
+    // Penalize 5 points then end the game as a loss
+    info.changeScoreBy(-5)
+    game.setGameOverEffect(false, effects.melt)
+    game.gameOver(false)
+})
+
 for (let value of tiles.getTilesByType(myTiles.tile1)) {
     let myPurpleHouse = sprites.create(img`
         ....................8a8aa8a8....................
