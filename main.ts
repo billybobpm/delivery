@@ -201,6 +201,9 @@ info.onCountdownEnd(function () {
     game.gameOver(false)
 })
 
+// Determine a representative color for the grass tile by sampling the tile image
+let grassColor = sprites.castle.tileGrass1.getPixel(7, 7)
+
 // Update every second: handle grass penalty and a 10s warning
 game.onUpdateInterval(1000, function () {
     if (gameEnded) return
@@ -214,19 +217,19 @@ game.onUpdateInterval(1000, function () {
         scene.cameraShake(2, 300)
     }
 
-    // Penalize 1 point per second when on grass
+    // Penalize 1 point per second when on grass (detect by background pixel color)
     if (car != null) {
-        const loc = tiles.locationOfSprite(car)
-        if (loc) {
-            const tile = tiles.tileAtLocation(loc)
-            if (tile == sprites.castle.tileGrass1) {
-                info.changeScoreBy(-1)
-                // end the game if score drops to -5 or lower
-                if (info.score() <= -5 && !gameEnded) {
-                    gameEnded = true
-                    game.setGameOverEffect(true, effects.confetti)
-                    game.gameOver(false)
-                }
+        const bg = scene.backgroundImage()
+        const worldX = Math.floor(car.x)
+        const worldY = Math.floor(car.y)
+        const colorUnder = bg.getPixel(worldX, worldY)
+        if (colorUnder == grassColor) {
+            info.changeScoreBy(-1)
+            // end the game if score drops to -5 or lower
+            if (info.score() <= -5 && !gameEnded) {
+                gameEnded = true
+                game.setGameOverEffect(true, effects.confetti)
+                game.gameOver(false)
             }
         }
     }
