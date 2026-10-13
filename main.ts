@@ -1,4 +1,5 @@
 let car: Sprite = null
+let gameEnded = false
 
 namespace SpriteKind {
     export const Object = SpriteKind.create()
@@ -6,6 +7,7 @@ namespace SpriteKind {
 // Game over when you reach the end of the
 // neighborhood
 scene.onOverlapTile(SpriteKind.Player, myTiles.tile3, function (sprite, location) {
+    gameEnded = true
     game.setGameOverEffect(true, effects.confetti)
     game.gameOver(true)
 })
@@ -37,7 +39,7 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
         `)
 })
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (car == null) return
+    if (car == null || gameEnded) return
     let package1 = sprites.createProjectileFromSprite(img`
         . . . . . . . . . . . . . . . .
         . . . . . . . e e e e e e e . .
@@ -59,7 +61,7 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 // Deliver packages up (A) or down (B)
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (car == null) return
+    if (car == null || gameEnded) return
     let package2 = sprites.createProjectileFromSprite(img`
         . . . . . . . . . . . . . . . .
         . . . . . . . e e e e e e e . .
@@ -191,9 +193,21 @@ scene.cameraFollowSprite(car)
 info.startCountdown(120)
 info.onCountdownEnd(function () {
     // Penalize 5 points then end the game as a loss
+    if (gameEnded) return
+    gameEnded = true
     info.changeScoreBy(-5)
     game.setGameOverEffect(false, effects.melt)
     game.gameOver(false)
+})
+
+// End the game when the score hits -5
+game.onUpdate(function () {
+    if (gameEnded) return
+    if (info.score() <= -5) {
+        gameEnded = true
+        game.setGameOverEffect(false, effects.melt)
+        game.gameOver(false)
+    }
 })
 
 for (let value of tiles.getTilesByType(myTiles.tile1)) {
